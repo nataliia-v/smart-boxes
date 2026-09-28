@@ -1,0 +1,104 @@
+name: Publish to Google Apps Script
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - run: npm test
+
+  publish:
+    name: Upload and publish
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: apps-script-production
+      cancel-in-progress: false
+    env:
+      DEPLOYMENT_ID: ${{ vars.APPS_SCRIPT_DEPLOYMENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Configure Google authorization
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+          import { homedir } from 'node:os';
+          import { join } from 'node:path';
+
+          const raw = process.env.CLASPRC_JSON;
+          if (!raw) {
+            console.error('::error::Add repository secret CLASPRC_JSON in Settings → Secrets and variables → Actions.');
+            process.exit(1);
+          }
+          let credentials;
+          try { credentials = JSON.parse(raw); }
+          catch {
+            console.error('::error::CLASPRC_JSON must contain the complete JSON from ~/.clasprc.json.');
+            process.exit(1);
+          }
+          const token = credentials?.tokens?.default || credentials?.token || credentials;
+          if (!token?.refresh_token) {
+            console.error('::error::Missing default refresh token. Run npx @google/clasp@3.4.1 login and update CLASPRC_JSON.');
+            process.exit(1);
+          }
+          writeFileSync(join(homedir(), '.clasprc.json'), JSON.stringify(credentials), { mode: 0o600 });
+          NODE
+
+      - name: Show files to upload
+        run: clasp --project .clasp.ci.json show-file-status
+
+      - name: Upload code to Apps Script
+        run: clasp --project .clasp.ci.json push --force
+
+      - name: Update existing web app deployment
+        if: env.DEPLOYMENT_ID != ''
+        run: clasp --project .clasp.ci.json update-deployment "$DEPLOYMENT_ID" --description "GitHub ${GITHUB_SHA:0:7}"
+
+      - name: Publication summary
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const { scriptId } = JSON.parse(readFileSync('.clasp.ci.json', 'utf8'));
+          const id = process.env.DEPLOYMENT_ID;
+          const result = id
+            ? `Web app deployment updated: https://script.google.com/macros/s/${encodeURIComponent(id)}/exec`
+            : 'Code uploaded. First launch: open Apps Script, run setup_, then Deploy → New deployment → Web app (Me / Anyone). Add its Deployment ID as repository variable APPS_SCRIPT_DEPLOYMENT_ID and run this workflow again to enable automatic web app updates.';
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            `## Smart Boxes\n\n${result}\n\n[Open Apps Script](https://script.google.com/home/projects/${scriptId}/edit)\n`);
+          NODE
+
+      - name: Remove temporary credentials
+        if: always()
+        run: node --input-type=module -e "import { rmSync } from 'node:fs'; import { homedir } from 'node:os'; import { join } from 'node:path'; rmSync(join(homedir(), '.clasprc.json'), { force:true });"

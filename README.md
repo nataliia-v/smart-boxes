@@ -32,7 +32,41 @@ npm test
 
 Тести виконують серверний код із підміною сервісів Google та перевіряють імпорт, збереження зображень, номери, конфлікти, повторні запити, валідацію та транслітерацію. Реальні дозволи Drive та вставлення зображення перевіряються після розгортання.
 
-## Підключення до Google — покроково
+## Автоматичне підключення GitHub → Google Apps Script
+
+Workflow **Publish to Google Apps Script** у `.github/workflows/apps-script.yml` запускає перевірки та після кожного push у `main` завантажує код із `apps-script/`. Для pull request виконуються лише перевірки. Запуск вручну: [Actions → Publish to Google Apps Script](https://github.com/nataliia-v/smart-boxes/actions/workflows/apps-script.yml) → **Run workflow → main → Run workflow**.
+
+Проєкт уже прив’язано через `.clasp.ci.json` до [вашого Apps Script](https://script.google.com/home/projects/1j6kw_7QvnJk6nPJlkS1Q4U29UZLqav_JIG71RbxVXo_Ap7zGjbZ4CPXt/edit). Script ID не є паролем. Облікові дані зберігаються окремо в GitHub Secret.
+
+### 1. Авторизація (один раз)
+
+1. Увімкніть **Google Apps Script API** в [налаштуваннях Google](https://script.google.com/home/usersettings).
+2. На своєму комп’ютері виконайте `npx @google/clasp@3.4.1 login` та підтвердьте вхід в акаунт власника проєкту. Якщо вже авторизувалися через `clasp login`, повторювати не потрібно.
+3. На Mac виконайте `pbcopy < ~/.clasprc.json`.
+4. У [Settings → Secrets and variables → Actions → Secrets](https://github.com/nataliia-v/smart-boxes/settings/secrets/actions) створіть **New repository secret** з назвою **`CLASPRC_JSON`**, вставте весь JSON та збережіть. Не додавайте цей файл до Git і не вставляйте його у повідомлення чи логи.
+5. Запустіть workflow через **Run workflow**. Код з’явиться в редакторі Apps Script після успішного кроку **Upload code to Apps Script**. Встановлювати `clasp` на GitHub вручну не потрібно — workflow робить це сам.
+
+### 2. Перша публікація інтерфейсу (один раз)
+
+1. Відкрийте [проєкт Apps Script](https://script.google.com/home/projects/1j6kw_7QvnJk6nPJlkS1Q4U29UZLqav_JIG71RbxVXo_Ap7zGjbZ4CPXt/edit), оновіть сторінку та запустіть **`setup_`**. Надайте запитані дозволи на таблицю і Drive.
+2. **Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone → Deploy**.
+3. Скопіюйте **Deployment ID** з **Deploy → Manage deployments**. Це не Script ID: потрібна частина URL між `/s/` і `/exec`.
+4. У [Settings → Secrets and variables → Actions → Variables](https://github.com/nataliia-v/smart-boxes/settings/variables/actions) натисніть **New repository variable**. Назва — **`APPS_SCRIPT_DEPLOYMENT_ID`**, значення — Deployment ID (не повний URL).
+5. Знову запустіть workflow. Відтепер кожен push у `main` також створюватиме версію й оновлюватиме це розгортання. URL інтерфейсу і коробок залишиться тим самим.
+
+Без `APPS_SCRIPT_DEPLOYMENT_ID` workflow успішно завантажує код **лише в редактор** та показує наступні кроки в Summary. Для оновлення вже опублікованого `/exec` потрібна ця змінна. Авторизація `clasp` надає доступ до керування кодом, а початковий запуск `setup_` окремо надає самому вебінтерфейсу доступ до даних.
+
+GitHub є джерелом коду: наступне завантаження замінює файли у редакторі Apps Script файлами репозиторію. Зміни в коді потрібно вносити в репозиторій. Завантаження коду саме по собі не запускає `setup_` і не змінює рядки таблиці.
+
+### Якщо workflow завершився з помилкою
+
+- **CLASPRC_JSON missing / invalid** — додайте повний JSON у repository secret з точною назвою `CLASPRC_JSON`.
+- **invalid_grant / invalid credentials** — повторіть `npx @google/clasp@3.4.1 login` та оновіть secret.
+- **Apps Script API disabled** — увімкніть API в налаштуваннях акаунта, зачекайте кілька хвилин і натисніть **Re-run failed jobs**.
+- **Permission denied / project not found** — авторизований Google-акаунт повинен мати доступ редактора до заданого проєкту.
+- **Deployment not found** — перевірте `APPS_SCRIPT_DEPLOYMENT_ID`: це ID розгортання саме цього проєкту, створеного тим самим акаунтом.
+
+## Ручне підключення до Google (якщо не використовуєте GitHub Actions)
 
 ### 1. Відкрити Apps Script
 
@@ -132,4 +166,4 @@ tools/          Локальний HTTP-перегляд, демо-адапте�
 tests/          Перевірки серверної логіки на Node.js
 ```
 
-Для подальшої синхронізації через `clasp` задайте `rootDir: "apps-script"` у локальному `.clasp.json`. Цей файл виключено з Git; для початкового запуску `clasp` не потрібен.
+Прив’язка для GitHub Actions зберігається в `.clasp.ci.json` (`rootDir: "apps-script"`). Локальний `.clasp.json` та облікові дані `.clasprc.json` виключені з Git.

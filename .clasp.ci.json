@@ -1,0 +1,6 @@
+{
+  "scriptId": "1j6kw_7QvnJk6nPJlkS1Q4U29UZLqav_JIG71RbxVXo_Ap7zGjbZ4CPXt",
+  "rootDir": "apps-script",
+  "filePushOrder": ["apps-script/Config.gs"],
+  "skipSubdirectories": true
+}
