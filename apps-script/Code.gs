@@ -9,7 +9,7 @@ function include_(name) {
 }
 
 /** Run manually in the Apps Script editor once to authorize and check configuration. */
-function setup_() {
+function setup() {
   const book = book_();
   const folder = DriveApp.getFolderById(CONFIG.photoFolderId);
   console.log('Таблиця: ' + book.getName() + '; папка: ' + folder.getName());

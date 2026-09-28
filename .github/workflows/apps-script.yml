@@ -94,7 +94,7 @@ jobs:
           const id = process.env.DEPLOYMENT_ID;
           const result = id
             ? `Web app deployment updated: https://script.google.com/macros/s/${encodeURIComponent(id)}/exec`
-            : 'Code uploaded. First launch: open Apps Script, run setup_, then Deploy → New deployment → Web app (Me / Anyone). Add its Deployment ID as repository variable APPS_SCRIPT_DEPLOYMENT_ID and run this workflow again to enable automatic web app updates.';
+            : 'Code uploaded. First launch: open Apps Script, run setup, then Deploy → New deployment → Web app (Me / Anyone). Add its Deployment ID as repository variable APPS_SCRIPT_DEPLOYMENT_ID and run this workflow again to enable automatic web app updates.';
           appendFileSync(process.env.GITHUB_STEP_SUMMARY,
             `## Smart Boxes\n\n${result}\n\n[Open Apps Script](https://script.google.com/home/projects/${scriptId}/edit)\n`);
           NODE
