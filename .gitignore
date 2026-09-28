@@ -1,0 +1,6 @@
+.DS_Store
+.clasp.json
+node_modules/
+.playwright-mcp/
+coverage/
+*.log
