@@ -4,6 +4,7 @@ import { AuthError } from 'next-auth';
 import { auth, signIn } from '@/auth';
 import { configured } from '@/lib/env';
 import { GoogleSignInButton } from '@/components/google-sign-in';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ e
         : 'Не вдалося увійти через Google. Спробуйте ще раз.'}</p>}
       <form action={continueWithGoogle}><GoogleSignInButton /></form>
       <p className="sign-in-note">Вперше тут? Акаунт створиться автоматично після входу через Google.</p>
+      <p className="sign-in-legal">Продовжуючи, ви приймаєте <Link href="/terms">Умови користування</Link>. Як ми працюємо з вашими даними — у <Link href="/privacy">Політиці конфіденційності</Link>.</p>
     </section>
   </main>;
 }

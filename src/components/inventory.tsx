@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Box, Plus, Search, ArrowLeft, QrCode, Settings, History, ArchiveRestore, X, ImagePlus, Trash2, PackageOpen, Link as LinkIcon, Check, LoaderCircle } from 'lucide-react';
 import { SortableBoxes } from './sortable-boxes';
+import { LegalLinks } from './legal-links';
 import QRCode from 'qrcode';
 import type { ActivityView, BoxView, Detail, ItemView } from '@/lib/types';
 import { compressPhoto } from '@/lib/image-compression';
@@ -152,6 +153,7 @@ export function Inventory({token,appUrl=''}:{token?:string;appUrl?:string}) {
         {(selected||guest||query)&&total>(tab==='activity'?30:24)&&<nav className="pagination" aria-label="Сторінки"><button className="button" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Назад</button><span>{page} / {Math.ceil(total/(tab==='activity'?30:24))}</span><button className="button" disabled={page>=Math.ceil(total/(tab==='activity'?30:24))} onClick={()=>setPage(p=>p+1)}>Далі</button></nav>}
       </>}
       <footer>Smart Box <span>Маленький порядок. Великий спокій.</span></footer>
+      <div className="catalog-legal"><LegalLinks /></div>
     </main>
     <dialog ref={dialog} onCancel={e=>{
       e.preventDefault();
