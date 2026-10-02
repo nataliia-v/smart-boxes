@@ -5,3 +5,10 @@ node_modules/
 .playwright-mcp/
 coverage/
 *.log
+.next/
+.env*
+!.env.example
+*.tsbuildinfo
+test-results/
+playwright-report/
+.vercel/

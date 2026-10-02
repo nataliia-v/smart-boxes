@@ -1,0 +1,38 @@
+name: Check Smart Box
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: smartbox
+          POSTGRES_PASSWORD: smartbox
+          POSTGRES_DB: smartbox_test
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U smartbox" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://smartbox:smartbox@localhost:5432/smartbox_test
+      DIRECT_URL: postgresql://smartbox:smartbox@localhost:5432/smartbox_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run check
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm run build

@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+enum GuestPermission {
+  VIEW
+  EDIT
+  PRIVATE
+}
+enum ActorType {
+  OWNER
+  GUEST
+}
+enum MediaStatus {
+  PENDING
+  READY
+  FAILED
+}
+model User {
+  id String @id @default(uuid())
+  name String?
+  email String? @unique
+  emailVerified DateTime?
+  image String?
+  driveRootFolderId String?
+  drivePhotosFolderId String?
+  driveStatus String @default("NOT_CONNECTED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  accounts Account[]
+  sessions Session[]
+  boxes Box[]
+  activities Activity[]
+}
+model Account {
+  id String @id @default(uuid())
+  userId String
+  type String
+  provider String
+  providerAccountId String
+  refresh_token String? @db.Text
+  access_token String? @db.Text
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String? @db.Text
+  session_state String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+model Session {
+  id String @id @default(uuid())
+  sessionToken String @unique
+  userId String
+  expires DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model VerificationToken {
+  identifier String
+  token String @unique
+  expires DateTime
+  @@unique([identifier, token])
+}
+model Box {
+  id String @id @default(uuid())
+  ownerId String
+  name String
+  description String @default("")
+  publicToken String @unique
+  guestPermission GuestPermission @default(VIEW)
+  nextItemNumber Int @default(1)
+  position Int @default(0)
+  version Int @default(1)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items Item[]
+  activities Activity[]
+  media Media[]
+  @@index([ownerId, deletedAt, createdAt])
+}
+model Item {
+  id String @id @default(uuid())
+  boxId String
+  number Int
+  name String
+  description String @default("")
+  photoId String? @unique
+  createdByUserId String?
+  createdByActorType ActorType
+  version Int @default(1)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  box Box @relation(fields: [boxId], references: [id], onDelete: Cascade)
+  photo Media? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+  activities Activity[]
+  @@unique([boxId, number])
+  @@index([boxId, deletedAt, createdAt])
+}
+model Media {
+  id String @id
+  boxId String
+  driveFileId String? @unique
+  status MediaStatus @default(PENDING)
+  filename String
+  bytes Int
+  deletionRequestedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  box Box @relation(fields: [boxId], references: [id], onDelete: Cascade)
+  item Item?
+  @@index([status, createdAt])
+}
+model Activity {
+  id String @id @default(uuid())
+  boxId String
+  itemId String?
+  action String
+  actorType ActorType
+  actorUserId String?
+  itemName String?
+  createdAt DateTime @default(now())
+  box Box @relation(fields: [boxId], references: [id], onDelete: Cascade)
+  item Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  @@index([boxId, createdAt])
+}
+model RateBucket {
+  key String @id
+  count Int
+  expiresAt DateTime
+  @@index([expiresAt])
+}
