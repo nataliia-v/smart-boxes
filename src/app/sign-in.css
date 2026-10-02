@@ -1,0 +1,11 @@
+.sign-in-page { min-height:100svh; display:grid; place-items:center; padding:32px 20px; }
+.sign-in-card { width:100%; max-width:430px; text-align:center; }
+.sign-in-mark { display:inline-flex; align-items:center; justify-content:center; width:72px; height:72px; border-radius:20px; background:#e9efdf; color:#315d48; margin-bottom:24px; }
+.sign-in-card .eyebrow { margin-bottom:13px; }
+.sign-in-card h1 { font-size:36px; letter-spacing:-1.3px; line-height:1.2; }
+.sign-in-intro { margin:18px 0 30px; color:#73806b; font-size:15px; }
+.google-sign-in { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; min-height:52px; background:#fff; color:#1f1f1f; border:1px solid #747775; border-radius:12px; padding:14px 20px; font-size:15px; font-weight:600; }
+.google-sign-in:hover { background:#f0f4f1; }
+.google-sign-in svg { flex-shrink:0; }
+.sign-in-note { color:#88917f; font-size:12px; margin:18px auto 0; max-width:320px; }
+@media(max-width:400px) { .sign-in-card h1 { font-size:31px; } }
