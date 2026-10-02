@@ -5,12 +5,11 @@ import { SortableBoxes } from './sortable-boxes';
 import QRCode from 'qrcode';
 import type { ActivityView, BoxView, Detail, ItemView } from '@/lib/types';
 import { compressPhoto } from '@/lib/image-compression';
-import { demoPhoto, demoRequest, resetDemo } from '@/lib/demo';
 
 const permissionNames={VIEW:'Лише перегляд',EDIT:'Перегляд і редагування',PRIVATE:'Лише власник'};
 const actions:Record<string,string>={BOX_CREATED:'Створено коробку',BOX_RENAMED:'Перейменовано коробку',BOX_UPDATED:'Оновлено коробку',ITEM_ADDED:'Додано річ',ITEM_UPDATED:'Оновлено річ',ITEM_REMOVED:'Прибрано річ',ITEM_RESTORED:'Відновлено річ',ITEM_PURGED:'Остаточно видалено річ',QR_REGENERATED:'Створено новий QR',GUEST_PERMISSION_CHANGED:'Змінено доступ',BOX_DELETED:'Видалено коробку'};
 type Modal = 'box'|'item'|'settings'|'qr'|'delete-item'|'purge-item'|'delete-box'|'rotate'|null;
-export function Inventory({demo=false,token,appUrl=''}:{demo?:boolean;token?:string;appUrl?:string}) {
+export function Inventory({token,appUrl=''}:{token?:string;appUrl?:string}) {
   const guest=Boolean(token);
   const [boxes,setBoxes]=useState<BoxView[]>([]),[selected,setSelected]=useState(''),[detail,setDetail]=useState<Detail|null>(null);
   const [items,setItems]=useState<ItemView[]>([]),[total,setTotal]=useState(0),[events,setEvents]=useState<ActivityView[]>([]);
@@ -30,16 +29,15 @@ export function Inventory({demo=false,token,appUrl=''}:{demo?:boolean;token?:str
   const base=guest?`/api/public/boxes/${token}`:`/api/boxes/${selected}`;
   const itemBase=editing&&!guest?`/api/boxes/${editing.boxId}`:base;
   const request=useCallback(async <T,>(path:string,method='GET',body?:unknown):Promise<T>=>{
-    if(demo)return await demoRequest(path,method,body) as T;
     const response=await fetch(path,{method,cache:'no-store',headers:body instanceof FormData?undefined:body?{'Content-Type':'application/json'}:undefined,body:body instanceof FormData?body:body?JSON.stringify(body):undefined});
     if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Не вдалося завантажити дані.');}
     return response.json();
-  },[demo]);
+  },[]);
   useEffect(()=>{
-    if(guest||demo)return;
+    if(guest)return;
     request<{driveStatus:string}>('/api/me').then(me=>setDriveWarning(me.driveStatus==='NEEDS_ATTENTION')).catch(()=>{});
-  },[request,guest,demo,refresh]);
-  const photoUrl=(item:ItemView)=>item.photoId?(demo?demoPhoto(item.photoId):`${guest?base:`/api/boxes/${item.boxId}`}/items/${item.id}/photo?v=${item.version}`):'';
+  },[request,guest,refresh]);
+  const photoUrl=(item:ItemView)=>item.photoId?`${guest?base:`/api/boxes/${item.boxId}`}/items/${item.id}/photo?v=${item.version}`:'';
   useEffect(()=>{
     const generation=++loadGeneration.current; const timer=setTimeout(async()=>{
       setLoading(true);setError('');
@@ -95,7 +93,7 @@ export function Inventory({demo=false,token,appUrl=''}:{demo?:boolean;token?:str
     if(value==='qr'&&detail?.box.publicToken){setQr('');QRCode.toDataURL(shareLink(),{width:600,margin:3,errorCorrectionLevel:'M'}).then(setQr).catch(()=>setFormError('Не вдалося створити QR.'));}
   }
   function close(){if(!busy){photoGeneration.current++;setModal(null);}}
-  function shareLink(){return demo?`${location.origin}/demo?box=${selected}`:`${appUrl}/b/${detail?.box.publicToken}`;}
+  function shareLink(){return `${appUrl}/b/${detail?.box.publicToken}`;}
   async function perform(work:()=>Promise<void>,success:string){
     if(busy||photoBusy)return;setBusy(true);setFormError('');cleanupPending.current=false;
     try{await work();setModal(null);setNotice(success+(cleanupPending.current?' Видалення старого фото з Drive очікує повторної спроби.':''));setRefresh(v=>v+1);}
@@ -121,7 +119,6 @@ export function Inventory({demo=false,token,appUrl=''}:{demo?:boolean;token?:str
   }
   const box=detail?.box,canEdit=detail?.canEdit&&!loading;
   return <>
-    {demo&&<div className="demo-banner">Демо · дані лише в цьому браузері · Google не підключено <button onClick={()=>{resetDemo();chooseBox('');setRefresh(v=>v+1);}}>Скинути</button></div>}
     <main className="workspace">
       <div className="page-top"><div className="page-heading"><p className="eyebrow">{guest?'КОРОБКА ЗА QR':selected?'УСЕ НА СВОЄМУ МІСЦІ':'ВАШ ДОМАШНІЙ КАТАЛОГ'}</p><div className="box-title-row"><h1>{guest?(box?.name||'Відкриваємо коробку'):selected?(box?.name||'Коробка'):'Кожній речі — своє місце.'}</h1>{!guest&&selected&&box&&<button className="icon-button title-qr" onClick={()=>open('qr')} aria-label="QR коробки"><QrCode size={25}/></button>}</div><p className="muted">{guest?'Усе всередині — перед вами.':selected?box?.description:'Менше шукати. Більше жити.'}</p></div>{!selected&&!guest&&<span className="hero-box"><Box size={68} strokeWidth={1}/></span>}</div>
       <div className="toolbar">
@@ -180,7 +177,7 @@ export function Inventory({demo=false,token,appUrl=''}:{demo?:boolean;token?:str
         {modal==='settings'&&<><label>Доступ за QR<select value={permission} onChange={e=>setPermission(e.target.value as BoxView['guestPermission'])}>{Object.entries(permissionNames).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label><p className="help">У режимі редагування кожен із QR може додавати, змінювати та прибирати речі. Налаштування коробки доступні лише вам.</p><div className="settings-actions"><button type="button" className="button" onClick={()=>open('rotate')}>Замінити QR</button><button type="button" className="button danger-outline" onClick={()=>open('delete-box')}>Видалити коробку</button></div></>}
         <div className="dialog-footer"><button type="button" className="button" onClick={close}>Скасувати</button><button className="button primary" disabled={photoBusy||!name.trim()}>{busy?'Зберігаємо…':modal==='box'?'Створити коробку':'Зберегти'}</button></div>
       </fieldset></form>}
-      {modal==='qr'&&<div className="qr-content"><h3>{box?.name}</h3>{qr&&<img src={qr} alt={`QR коробки ${box?.name}`} width={270} height={270}/>}<p className="muted">{permissionNames[box?.guestPermission||'VIEW']}</p>{demo&&<p className="help">Демо-QR відкриває демо. Справжній гостьовий доступ з’явиться після підключення сервісів.</p>}{box?.guestPermission==='PRIVATE'&&<p className="help">Доступ гостей вимкнений. Відкрити коробку можна у своєму кабінеті.</p>}<input aria-label="Посилання на коробку" readOnly value={shareLink()}/><div className="qr-actions"><button className="button" onClick={async()=>{try{await navigator.clipboard.writeText(shareLink());setCopied(true);}catch{setFormError('Скопіюйте посилання вручну з поля вище.');}}}>{copied?<Check size={16}/>:<LinkIcon size={16}/>}Копіювати</button><a className="button" href={qr} download="smart-box-qr.png">PNG</a><button className="button primary" onClick={()=>window.print()}>Друк</button></div></div>}
+      {modal==='qr'&&<div className="qr-content"><h3>{box?.name}</h3>{qr&&<img src={qr} alt={`QR коробки ${box?.name}`} width={270} height={270}/>}<p className="muted">{permissionNames[box?.guestPermission||'VIEW']}</p>{box?.guestPermission==='PRIVATE'&&<p className="help">Доступ гостей вимкнений. Відкрити коробку можна у своєму кабінеті.</p>}<input aria-label="Посилання на коробку" readOnly value={shareLink()}/><div className="qr-actions"><button className="button" onClick={async()=>{try{await navigator.clipboard.writeText(shareLink());setCopied(true);}catch{setFormError('Скопіюйте посилання вручну з поля вище.');}}}>{copied?<Check size={16}/>:<LinkIcon size={16}/>}Копіювати</button><a className="button" href={qr} download="smart-box-qr.png">PNG</a><button className="button primary" onClick={()=>window.print()}>Друк</button></div></div>}
       {modal==='delete-item'&&<><p>Прибрати «{editing?.name}» з коробки?</p><p className="help">Власник зможе відновити річ. Фото залишиться на Drive.</p><Confirm busy={busy} close={close} label="Прибрати" action={()=>perform(async()=>{await request(`${itemBase}/items/${editing!.id}`,'DELETE',{version:editing!.version});},'Річ прибрано')}/></>}
       {modal==='purge-item'&&<><p>Остаточно видалити «{editing?.name}»?</p><p className="help">Річ і її фото в Google Drive буде видалено без можливості відновлення.</p><Confirm busy={busy} close={close} label="Видалити остаточно" action={()=>perform(async()=>{const result=await request<{cleanupPending:boolean}>(`${itemBase}/items/${editing!.id}/permanent`,'DELETE',{version:editing!.version});cleanupPending.current=result.cleanupPending;},'Річ остаточно видалено')}/></>}
       {modal==='delete-box'&&<><p>Коробка «{box?.name}» та її речі зникнуть із каталогу, QR перестане працювати.</p><p className="help">Фото на Google Drive не видалятимуться. Відновлення цілої коробки через інтерфейс поки немає.</p><Confirm busy={busy} close={close} label="Видалити коробку" action={()=>perform(async()=>{await request(base,'DELETE',{version:box!.version});chooseBox('');},'Коробку видалено')}/></>}

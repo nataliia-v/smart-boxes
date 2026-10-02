@@ -49,7 +49,7 @@ export function clientIp(request: Request) {
 export function response(data: unknown, status = 200) { return Response.json(data, { status, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } }); }
 export async function endpoint(work: () => Promise<Response>) {
   try {
-    if (!configured()) throw new AppError(503, 'Сервіси ще не підключені. Поки можна відкрити демо.');
+    if (!configured()) throw new AppError(503, 'Сервіси ще не підключені. Адміністратору потрібно завершити налаштування сайту.');
     return await work();
   } catch (error) {
     if (error instanceof AppError) return response({ error: error.message }, error.status);
