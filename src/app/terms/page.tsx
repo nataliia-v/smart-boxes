@@ -2,14 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage } from '@/components/legal-page';
 import { legal } from '@/lib/legal';
+import { getLocale } from '@/server/locale';
+import { translate } from '@/lib/i18n';
+import { TermsEnglish } from '@/components/legal-english';
 
-export const metadata: Metadata = {
-  title: 'Умови користування (Terms of Service)',
-  description: 'Правила користування Smart Box: акаунт, QR-доступ, фотографії, права на вміст і видалення.',
+export async function generateMetadata():Promise<Metadata> { const locale=await getLocale(); return {
+  title: translate(locale,'terms'),
+  description: translate(locale,'termsDescription'),
   alternates: { canonical: `${legal.origin}/terms` },
-};
+}; }
 
-export default function Terms() {
+export default async function Terms() {
+  if(await getLocale()==='en')return <LegalPage title="Terms of Service" english="Terms of Service"><TermsEnglish/></LegalPage>;
   return <LegalPage title="Умови користування" english="Terms of Service">
     <p>Ці умови регулюють користування Smart Box на <a href={legal.origin}>{legal.origin}</a>. Сервісом керує {legal.operator}; контакт: <a href={`mailto:${legal.email}`}>{legal.email}</a>. Створюючи акаунт або виконуючи дії з вмістом коробки, ви приймаєте ці умови. Якщо ви з ними не погоджуєтеся, не створюйте акаунт і не користуйтеся функціями сервісу.</p>
 

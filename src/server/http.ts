@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { configured, env } from '@/lib/env';
 import { db } from './db';
 import { AppError } from './errors';
+import { errorCode } from '@/lib/error-messages';
 
 export async function owner() {
   const session = await auth();
@@ -46,7 +47,10 @@ export async function rateLimit(key: string, limit: number, seconds = 60) {
 export function clientIp(request: Request) {
   return process.env.VERCEL ? request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || 'unknown' : 'local';
 }
-export function response(data: unknown, status = 200) { return Response.json(data, { status, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } }); }
+export function response(data: unknown, status = 200) {
+  if(status>=400&&data&&typeof data==='object'&&'error' in data&&typeof data.error==='string')data={...data,code:errorCode(data.error)};
+  return Response.json(data, { status, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } });
+}
 export async function endpoint(work: () => Promise<Response>) {
   try {
     if (!configured()) throw new AppError(503, 'Сервіси ще не підключені. Адміністратору потрібно завершити налаштування сайту.');

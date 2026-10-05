@@ -1,8 +1,11 @@
+'use client';
 import Link from 'next/link';
+import { useLanguage } from './language';
 
 export function LegalLinks() {
-  return <nav className="legal-links" aria-label="Правова інформація">
-    <Link href="/privacy">Політика конфіденційності</Link>
-    <Link href="/terms">Умови користування</Link>
+  const { t }=useLanguage();
+  return <nav className="legal-links" aria-label={t('legalNav')}>
+    <Link href="/privacy">{t('privacy')}</Link>
+    <Link href="/terms">{t('terms')}</Link>
   </nav>;
 }

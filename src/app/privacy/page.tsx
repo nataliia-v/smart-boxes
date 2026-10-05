@@ -2,14 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage } from '@/components/legal-page';
 import { legal } from '@/lib/legal';
+import { getLocale } from '@/server/locale';
+import { translate } from '@/lib/i18n';
+import { PrivacyEnglish } from '@/components/legal-english';
 
-export const metadata: Metadata = {
-  title: 'Політика конфіденційності (Privacy Policy)',
-  description: 'Як Smart Box отримує, використовує, зберігає, передає та видаляє дані користувачів і Google Drive.',
+export async function generateMetadata():Promise<Metadata> { const locale=await getLocale(); return {
+  title: translate(locale,'privacy'),
+  description: translate(locale,'privacyDescription'),
   alternates: { canonical: `${legal.origin}/privacy` },
-};
+}; }
 
-export default function Privacy() {
+export default async function Privacy() {
+  if(await getLocale()==='en')return <LegalPage title="Privacy Policy" english="Privacy Policy"><PrivacyEnglish/></LegalPage>;
   return <LegalPage title="Політика конфіденційності" english="Privacy Policy">
     <p>Ця політика пояснює обробку даних у Smart Box — вебсервісі для обліку речей у коробках і спільного доступу за QR-посиланням. Вона стосується власників акаунтів, гостей за посиланням і відвідувачів сайту <a href={legal.origin}>{legal.origin}</a>.</p>
 
@@ -64,7 +68,7 @@ export default function Privacy() {
     </section>
 
     <section><h2>7. Cookies і безпека</h2>
-      <p>Ми використовуємо необхідні cookies для сесії, OAuth-входу та захисту запитів. Без них вхід може не працювати. Пароль Google не зберігається; OAuth-токени шифруються на сервері, з’єднання production-сайту використовують HTTPS. Перед видачею даних перевіряються права власника або чинний QR-доступ.</p>
+      <p>Ми використовуємо необхідні cookies для сесії, OAuth-входу, захисту запитів та вибору мови інтерфейсу. Без cookies авторизації вхід може не працювати. Вибір мови зберігається в cookie до одного року; його можна змінити перемикачем UA / EN або видалити в налаштуваннях браузера. Пароль Google не зберігається; OAuth-токени шифруються на сервері, з’єднання production-сайту використовують HTTPS. Перед видачею даних перевіряються права власника або чинний QR-доступ.</p>
       <p>Зображення можуть бути зменшені й перетворені на JPEG; сервер прибирає вбудовані метадані під час повторного кодування. Це не прибирає персональну інформацію, видиму безпосередньо на фото. Жодна система не гарантує абсолютної безпеки. Якщо ви підозрюєте витік QR чи акаунта, змініть доступ і зверніться до нас.</p>
     </section>
 

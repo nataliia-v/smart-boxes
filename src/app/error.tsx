@@ -1,2 +1,3 @@
 'use client';
-export default function ErrorPage({reset}:{reset:()=>void}){return <main className="setup"><h1>Не вдалося відкрити сторінку</h1><p>Спробуйте ще раз. Якщо це перший запуск, перевірте налаштування сервісів.</p><button className="button primary" onClick={reset}>Спробувати ще раз</button></main>;}
+import { useLanguage, LanguageSwitch } from '@/components/language';
+export default function ErrorPage({reset}:{reset:()=>void}){const {t}=useLanguage();return <main className="setup"><LanguageSwitch/><h1>{t('pageError')}</h1><p>{t('pageErrorHelp')}</p><button className="button primary" onClick={reset}>{t('retry')}</button></main>;}

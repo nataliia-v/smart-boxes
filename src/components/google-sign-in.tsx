@@ -2,9 +2,11 @@
 
 import { useFormStatus } from 'react-dom';
 import { LoaderCircle } from 'lucide-react';
+import { useLanguage } from './language';
 
 export function GoogleSignInButton() {
   const { pending } = useFormStatus();
+  const { t } = useLanguage();
   return <button type="submit" className="google-sign-in" disabled={pending}>
     {pending ? <LoaderCircle size={20} className="spinner" aria-hidden="true" /> :
       <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
@@ -13,6 +15,6 @@ export function GoogleSignInButton() {
         <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.79-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 2.56 10.78l7.97-6.19Z" />
         <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" />
       </svg>}
-    <span>{pending ? 'Переходимо до Google…' : 'Продовжити з Google'}</span>
+    <span>{t(pending ? 'signingIn' : 'signIn')}</span>
   </button>;
 }
