@@ -6,7 +6,7 @@ import { LegalLinks } from './legal-links';
 import QRCode from 'qrcode';
 import type { ActivityView, BoxView, Detail, ItemView } from '@/lib/types';
 import { compressPhoto } from '@/lib/image-compression';
-import { useLanguage, LanguageSwitch } from './language';
+import { useLanguage } from './language';
 import { messages, type MessageKey } from '@/lib/i18n';
 import { localizedError } from '@/lib/error-messages';
 
@@ -165,7 +165,7 @@ export function Inventory({token,appUrl=''}:{token?:string;appUrl?:string}) {
       if(e.target!==e.currentTarget||modal==='item')return;
       close();
     }} className={modal==='qr'?'qr-dialog':''}>
-      <div className="dialog-heading"><div><p className="eyebrow">SMART BOX</p><h2>{t(modal==='box'?'newBox':modal==='item'?(editing?'editItem':'addItem'):modal==='settings'?'settings':modal==='qr'?'yourQr':modal==='rotate'?'rotateQuestion':modal==='delete-box'?'deleteBoxQuestion':modal==='purge-item'?'purgeQuestion':'removeQuestion')}</h2><LanguageSwitch/></div><button className="icon-button" onClick={close} disabled={busy} aria-label={t('close')}><X size={20}/></button></div>
+      <div className="dialog-heading"><div><p className="eyebrow">SMART BOX</p><h2>{t(modal==='box'?'newBox':modal==='item'?(editing?'editItem':'addItem'):modal==='settings'?'settings':modal==='qr'?'yourQr':modal==='rotate'?'rotateQuestion':modal==='delete-box'?'deleteBoxQuestion':modal==='purge-item'?'purgeQuestion':'removeQuestion')}</h2></div><button className="icon-button" onClick={close} disabled={busy} aria-label={t('close')}><X size={20}/></button></div>
       {formError&&<p className="error" role="alert">{localizedError(locale,formError)}</p>}
       {['box','item','settings'].includes(modal||'')&&<form onSubmit={submit}><fieldset disabled={busy}>
         <label>{t('name')}<input autoFocus required maxLength={modal==='item'?200:100} value={name} onChange={e=>setName(e.target.value)} placeholder={t(modal==='item'?'itemExample':'boxExample')}/></label>
